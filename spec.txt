@@ -1,0 +1,362 @@
+# tpt-av-test
+
+**A pure-Rust, rigorous conformance, fuzzing, and benchmarking harness for the TPT AV Stack. The quality assurance backbone that guarantees spec-compliance, real-time safety, and license purity.**
+
+**License:** MIT  
+**Status:** Early-stage / Pre-1.0  
+**Ecosystem:** [TPT Solutions Open Source](https://opensource.tptsolutions.co.nz/)
+
+---
+
+## 1. Vision & Philosophy
+
+`tpt-av-test` is the **quality assurance layer** of the TPT AV Stack. Because we are writing custom audio/video parsers, CRDTs, and real-time engines from scratch to guarantee a pure MIT license, we have a massive burden of proof: we must prove our code is bit-exact, panic-free, and performant.
+
+Duplicating test infrastructure across 10 repositories is inefficient and leads to inconsistencies. `tpt-av-test` provides a centralized, reusable testing harness that every other TPT repo depends on for:
+1. **Golden Master Testing:** Comparing our pure-Rust output against industry-standard references (e.g., FFmpeg, libsndfile) without linking their GPL/LGPL code.
+2. **Property-Based Fuzzing:** Feeding millions of malformed, random inputs to parsers to guarantee they never panic.
+3. **Real-Time Safety Benchmarks:** Measuring heap allocations and max execution time per audio/video block to guarantee dropout-free performance.
+4. **Mock Hardware:** Virtual audio devices, mock MIDI ports, and fake network transports for CI/CD testing.
+
+### Core Tenets
+
+1. **Zero Production Dependencies:** This crate is strictly for `dev-dependencies` and `cfg(test)`. It must never bloat the production binary.
+2. **Subprocess Isolation:** When comparing against GPL/LGPL tools (like FFmpeg), we invoke them via CLI subprocesses, ensuring their licenses do not infect our pure MIT codebase.
+3. **Deterministic Fuzzing:** All fuzz tests are reproducible. A failing seed is saved and re-run on every CI build.
+4. **Strict Real-Time Assertions:** Benchmarks actively monitor and fail if *any* heap allocation occurs during an audio callback simulation.
+5. **Pure MIT Licensing:** No GPL/LGPL/MPL dependencies. Enforced via `cargo-deny` in CI.
+
+---
+
+## 2. Ecosystem Integration
+
+`tpt-av-test` is consumed as a `dev-dependency` by every other repository in the TPT AV Stack.
+
+| Crate | How it uses `tpt-av-test` |
+| :--- | :--- |
+| **`tpt-cadence`** | Uses `reference::assert_bit_exact_vs_ffmpeg` to prove WAV/FLAC/Opus decoders match FFmpeg output. Uses `fuzz::fuzz_parser` to ensure no panics on corrupt files. |
+| **`tpt-audio`** | Uses `benchmark::assert_real_time_safe` to prove the mixer graph allocates zero bytes during a 512-sample callback. |
+| **`tpt-visual`** | Uses `reference::assert_frame_exact` to compare GPU compositor output against reference images. |
+| **`tpt-av-sync`** | Uses `fuzz::proptest_crdt_commutative` to mathematically prove that concurrent operations always resolve to the same state. |
+| **`tpt-av-control`** | Uses `mock::MockMidiDevice` to test MIDI parsing in CI without physical hardware. |
+
+---
+
+## 3. Repository Architecture (Cargo Workspace)
+
+All sub-crates share the `tpt-av-test-` prefix.
+
+```text
+tpt-av-test/                        # GitHub Repository / Workspace Root
+├── Cargo.toml                      # Workspace manifest
+├── deny.toml                       # cargo-deny license audit config
+├── LICENSE-MIT
+├── README.md
+├── DESIGN.md                       # This file
+│
+├── tpt-av-test-reference/          # Golden master comparison harness
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── ffmpeg.rs               # FFmpeg CLI subprocess wrapper
+│   │   ├── libsndfile.rs           # libsndfile CLI wrapper (via sox/ffprobe)
+│   │   ├── image.rs                # Pixel-exact image comparison (PSNR, SSIM)
+│   │   └── audio.rs                # PCM bit-exact comparison (with float epsilon)
+│   ├── Cargo.toml
+│   └── tests/
+│
+├── tpt-av-test-fuzz/               # Property-based fuzzing utilities
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── parser.rs               # Generic parser fuzzing macros
+│   │   ├── crdt.rs                 # CRDT commutativity/idempotency proptests
+│   │   ├── seed.rs                 # Deterministic seed management
+│   │   └── corpus/                 # Known bad inputs (regression seeds)
+│   ├── Cargo.toml
+│   └── tests/
+│
+├── tpt-av-test-benchmark/          # Real-time safety and performance benchmarks
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── allocation_tracker.rs   # Custom allocator to detect heap allocations
+│   │   ├── timing.rs               # Microsecond-precision execution timing
+│   │   ├── audio_block.rs          # Simulated audio callback benchmarking
+│   │   └── macros.rs               # `#[bench_real_time]` procedural macro
+│   ├── Cargo.toml
+│   └── tests/
+│
+├── tpt-av-test-mock/               # Mock hardware and network for CI
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── audio_device.rs         # Virtual audio I/O (sine wave generator)
+│   │   ├── midi_port.rs            # Virtual MIDI input/output
+│   │   ├── network.rs              # Mock WebRTC/WebSocket transport
+│   │   └── filesystem.rs           # In-memory virtual filesystem
+│   ├── Cargo.toml
+│   └── tests/
+│
+└── tpt-av-test-vectors/            # Static test files (git-lfs managed)
+    ├── audio/
+    │   ├── wav/                    # Official WAV test vectors
+    │   ├── flac/                   # Official FLAC test suite
+    │   └── opus/                   # Official Opus test vectors
+    ├── video/
+    │   └── h264/                   # ITU-T H.264 conformance streams
+    └── images/
+        └── reference/              # Golden master images for compositor tests
+
+4. Core API Design
+4.1. Golden Master Comparison (tpt-av-test-reference)
+This is the most critical tool for proving our pure-Rust parsers are correct without linking GPL code.
+
+/// Compares the output of a TPT decoder against FFmpeg (via CLI subprocess).
+///
+/// # Safety
+/// This does NOT link against FFmpeg. It spawns `ffmpeg` as a subprocess,
+/// ensuring the GPL license of FFmpeg does not infect the MIT-licensed TPT code.
+pub fn assert_bit_exact_vs_ffmpeg(
+    input_file: &Path,
+    tpt_decoder_output: &[f32],
+    sample_rate: u32,
+    channels: u16,
+    tolerance: f32, // 0.0 for integer formats, small epsilon (e.g., 1e-6) for float
+) -> Result<(), ReferenceError> {
+    // 1. Spawn `ffmpeg -i input_file -f f32le -ar {sample_rate} -ac {channels} pipe:1`
+    // 2. Read FFmpeg's stdout into a buffer
+    // 3. Compare buffer with `tpt_decoder_output`
+    // 4. Assert that the difference is within `tolerance`
+    todo!()
+}
+
+/// Compares two images for visual equivalence (used for tpt-visual).
+pub fn assert_image_similar(
+    generated: &image::DynamicImage,
+    reference_path: &Path,
+    max_psnr_diff: f64,
+) -> Result<(), ReferenceError> {
+    // 1. Load reference image
+    // 2. Compute PSNR (Peak Signal-to-Noise Ratio) or SSIM
+    // 3. Assert similarity
+    todo!
+}
+
+4.2. Property-Based Fuzzing (tpt-av-test-fuzz)
+Guarantees that parsers never panic, even on malicious or corrupt input.
+
+use proptest::prelude::*;
+use tpt_av_test_fuzz::parser::fuzz_parser_never_panics;
+
+// Example usage in tpt-cadence:
+proptest! {
+    #[test]
+    fn wav_decoder_never_panics_on_random_input(
+        data in proptest::collection::vec(any::<u8>(), 0..10000)
+    ) {
+        // This macro wraps the parser and asserts it returns Err, not panic.
+        fuzz_parser_never_panics!(
+            parser: WavDecoder::open,
+            input: std::io::Cursor::new(data)
+        );
+    }
+}
+
+/// CRDT Commutativity Test
+/// Proves that Operation A then B yields the same state as B then A.
+pub fn assert_crdt_commutative<A, B, S>(
+    initial_state: S,
+    op_a: A,
+    op_b: B,
+    apply_fn: impl Fn(S, A) -> S,
+) where
+    S: PartialEq + std::fmt::Debug,
+{
+    let state_ab = apply_fn(apply_fn(initial_state.clone(), op_a.clone()), op_b.clone());
+    let state_ba = apply_fn(apply_fn(initial_state.clone(), op_b), op_a);
+    
+    assert_eq!(state_ab, state_ba, "CRDT operations are not commutative!");
+}
+
+4.3. Real-Time Safety Benchmarking (tpt-av-test-benchmark)
+Proves that audio/video processing threads never allocate memory.
+
+/// A custom global allocator wrapper that tracks heap allocations.
+pub struct AllocationTracker {
+    inner: std::alloc::System,
+    allocation_count: std::sync::atomic::AtomicUsize,
+    panics_on_alloc: bool,
+}
+
+/// Macro to assert a block of code is real-time safe (zero allocations).
+#[macro_export]
+macro_rules! assert_real_time_safe {
+    ($code:block) => {
+        let mut tracker = tpt_av_test_benchmark::AllocationTracker::new(true);
+        let result = std::panic::catch_unwind(|| {
+            $code
+        });
+        
+        let allocs = tracker.get_allocation_count();
+        assert_eq!(allocs, 0, "Real-time safety violation: {} heap allocations detected!", allocs);
+        
+        result.expect("Code panicked during real-time execution");
+    };
+}
+
+// Example usage in tpt-audio:
+#[test]
+fn mixer_process_is_real_time_safe() {
+    let mut mixer = Mixer::new(2, 48000);
+    let mut buffer = vec![0.0f32; 512 * 2];
+    
+    assert_real_time_safe!({
+        mixer.process(&mut buffer).unwrap();
+    });
+}
+
+4.4. Mock Hardware (tpt-av-test-mock)
+Enables CI testing without physical devices.
+
+/// A virtual MIDI device that generates predictable test messages.
+pub struct MockMidiDevice {
+    tx: std::sync::mpsc::Sender<MidiMessage>,
+    rx: std::sync::mpsc::Receiver<MidiMessage>,
+}
+
+impl MockMidiDevice {
+    pub fn new() -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+        Self { tx, rx }
+    }
+    
+    /// Injects a MIDI message into the virtual port.
+    pub fn inject(&self, msg: MidiMessage) {
+        self.tx.send(msg).unwrap();
+    }
+}
+
+impl MidiInput for MockMidiDevice {
+    fn try_recv(&mut self) -> Result<Option<MidiMessage>, MidiError> {
+        Ok(self.rx.try_recv().ok())
+    }
+}
+
+5. CI/CD Integration
+tpt-av-test is the gatekeeper of the TPT AV Stack's quality. Every pull request to any TPT repository must pass:
+cargo test: All unit and integration tests.
+a. Includes assert_bit_exact_vs_ffmpeg checks.
+cargo fuzz: Runs property-based tests for 60 seconds on all parsers.
+cargo bench: Runs real-time safety benchmarks. Fails if any allocation is detected in #[bench_real_time] blocks.
+cargo deny check: Ensures no GPL/LGPL/MPL dependencies snuck into the Cargo.lock.
+6. Roadmap
+Phase 1: Foundation & Reference Harness (Current)
+tpt-av-test-reference with FFmpeg subprocess wrapper
+tpt-av-test-reference with PCM bit-exact comparison (with float epsilon)
+Git LFS setup for tpt-av-test-vectors (official test files)
+cargo-deny CI pipeline
+Phase 2: Fuzzing Infrastructure
+tpt-av-test-fuzz with proptest macros for parser testing
+Corpus of known-bad inputs (regression seeds)
+CRDT commutativity/idempotency proptest harness
+Phase 3: Real-Time Benchmarking
+tpt-av-test-benchmark with custom AllocationTracker
+#[bench_real_time] procedural macro
+Audio block processing benchmarks (512/1024 samples)
+Phase 4: Mock Hardware
+tpt-av-test-mock with MockMidiDevice
+MockAudioDevice (generates sine waves, accepts buffers)
+MockNetworkTransport for tpt-av-sync testing
+7. Dependency & Licensing Rules
+Allowed Dependencies (Permissive Only)
+proptest (MIT/Apache) — Property-based testing
+criterion (MIT/Apache) — Benchmarking
+image (MIT) — Image comparison
+tempfile (MIT/Apache) — Temporary files for subprocess tests
+log (MIT/Apache)
+Banned Dependencies
+ffmpeg-sys (LGPL/GPL) — We use the CLI binary, never the sys crate.
+Any crate that forces GPL, LGPL, AGPL, or MPL.
+Enforcement
+
+[licenses]
+unlicensed = "deny"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+]
+deny = [
+    "GPL-2.0",
+    "GPL-3.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "AGPL-3.0",
+    "MPL-2.0",
+]
+
+
+8. Workspace Cargo.toml
+
+[workspace]
+resolver = "2"
+members = [
+    "tpt-av-test-reference",
+    "tpt-av-test-fuzz",
+    "tpt-av-test-benchmark",
+    "tpt-av-test-mock",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/tpt-solutions/tpt-av-test"
+rust-version = "1.75"
+
+[workspace.dependencies]
+tpt-av-test-reference = { path = "tpt-av-test-reference", version = "0.1.0" }
+tpt-av-test-fuzz = { path = "tpt-av-test-fuzz", version = "0.1.0" }
+tpt-av-test-benchmark = { path = "tpt-av-test-benchmark", version = "0.1.0" }
+tpt-av-test-mock = { path = "tpt-av-test-mock", version = "0.1.0" }
+proptest = "1.4"
+criterion = "0.5"
+tempfile = "3.10"
+log = "0.4"
+
+9. Contributing & License
+This project is released under the MIT License.
+By contributing to tpt-av-test, you agree that:
+Your code will be licensed under the same pure MIT terms.
+You will not introduce any dependency that is GPL, LGPL, AGPL, or MPL licensed.
+All reference comparisons must use subprocess invocation, never direct linking.
+All fuzz tests must be deterministic and reproducible.
+This ensures the TPT AV Stack's quality assurance remains free, open, and unencumbered by copyleft restrictions.
+
+
+---
+
+### The Complete TPT AV Stack is Now Defined
+
+You now have the complete, locked-in design specifications for all **10 foundational repositories** of the TPT AV Stack:
+
+1. ✅ **`tpt-kinetix`** (Video codecs, containers, streaming)
+2. ✅ **`tpt-cadence`** (Audio codecs)
+3. ✅ **`tpt-audio`** (Audio processing + I/O)
+4. ✅ **`tpt-visual`** (Video processing)
+5. ✅ **`tpt-voice`** (Speech & AI)
+6. ✅ **`tpt-av-control`** (Studio protocols)
+7. ✅ **`tpt-av-asset`** (Media asset management)
+8. ✅ **`tpt-av-ui`** (Media UI components)
+9. ✅ **`tpt-av-sync`** (Real-time collaboration/CRDT)
+10. ✅ **`tpt-av-test`** (Conformance, fuzzing, benchmarking)
+
+### What's Next?
+
+You have a multi-year, world-class architectural blueprint. You don't need to build all 10 at once. The beauty of this design is that you can start small and expand.
+
+**Recommended Immediate Action:**
+1. Create `tpt-cadence` (Audio Codecs).
+2. Write the `Decoder` trait and the WAV parser.
+3. Use `tpt-av-test` (which you can build in parallel) to prove your WAV parser is bit-exact against FFmpeg.
