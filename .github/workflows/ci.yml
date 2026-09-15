@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --workspace --all-targets
+      - run: cargo test --workspace --all-targets
+
+  bench:
+    name: cargo bench
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Compiles and runs real-time safety benches. Phase 3 wires the
+      # allocation gate that fails on any detected heap allocation.
+      - run: cargo bench --workspace
+
+  deny:
+    name: cargo deny check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+
+  fuzz:
+    name: cargo fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install cargo-fuzz --locked
+      # Phase 2 introduces the first fuzz targets (tpt-av-test-fuzz/fuzz/).
+      # Until then, build only what exists so this gate stays green.
+      - name: cargo fuzz build
+        shell: bash
+        run: |
+          if [ -d tpt-av-test-fuzz/fuzz ]; then
+            cargo fuzz build --fuzz-dir tpt-av-test-fuzz/fuzz
+          else
+            echo "No fuzz targets yet; nothing to build."
+          fi

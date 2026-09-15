@@ -1,0 +1,27 @@
+# cargo-deny configuration for tpt-av-test.
+#
+# tpt-av-test guarantees a pure MIT OR Apache-2.0 dependency graph.
+# Any GPL/LGPL/AGPL/MPL dependency is a CI failure. See DESIGN.md section 7.
+#
+# In cargo-deny >= 0.20 every license is denied unless explicitly listed in
+# `allow`; the allow list below is therefore the complete license
+# whitelist for the entire dependency graph.
+
+[licenses]
+# Everything not in this list is denied by default, including all
+# GPL/LGPL/AGPL/MPL licenses.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+]
+
+[bans]
+# Copyleft crates that must never appear in the dependency graph.
+deny = [
+    "ffmpeg-sys",
+]

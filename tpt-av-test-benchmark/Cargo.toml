@@ -1,0 +1,13 @@
+[package]
+name = "tpt-av-test-benchmark"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Real-time safety and performance benchmark harness for the TPT AV Stack: heap allocation tracking and microsecond-precision audio callback timing."
+categories = ["development-tools::testing", "performance"]
+keywords = ["benchmark", "real-time", "allocation", "audio", "criterion"]
+
+[dependencies]
+log.workspace = true

@@ -6,21 +6,21 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 
 ## Phase 0 — Repository & Workspace Scaffolding
 
-- [ ] `git init` + Rust `.gitignore`
-- [ ] Workspace `Cargo.toml` (resolver "2", `[workspace.package]`: version 0.1.0, edition 2021, license "MIT OR Apache-2.0", repository URL, rust-version 1.75; `[workspace.dependencies]`)
-- [ ] `LICENSE-MIT`
-- [ ] `LICENSE-APACHE`
-- [ ] `README.md` (vision & philosophy summary)
-- [ ] `DESIGN.md` (full design doc, from spec)
-- [ ] `deny.toml` (allow/deny license lists, MIT + Apache-2.0 wording)
-- [ ] Create `tpt-av-test-reference/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
-- [ ] Create `tpt-av-test-fuzz/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
-- [ ] Create `tpt-av-test-benchmark/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
-- [ ] Create `tpt-av-test-mock/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
-- [ ] Create `tpt-av-test-vectors/` directory tree (`audio/{wav,flac,opus}`, `video/h264`, `images/reference`)
-- [ ] Set up Git LFS tracking for `tpt-av-test-vectors/`
-- [ ] GitHub Actions CI workflow (`.github/workflows/ci.yml`): `cargo test`, `cargo fuzz`, `cargo bench`, `cargo deny check`
-- [ ] Initial commit
+- [x] `git init` + Rust `.gitignore`
+- [x] Workspace `Cargo.toml` (resolver "2", `[workspace.package]`: version 0.1.0, edition 2021, license "MIT OR Apache-2.0", repository URL, rust-version 1.75; `[workspace.dependencies]`)
+- [x] `LICENSE-MIT`
+- [x] `LICENSE-APACHE`
+- [x] `README.md` (vision & philosophy summary)
+- [x] `DESIGN.md` (full design doc, from spec)
+- [x] `deny.toml` (allow/deny license lists, MIT + Apache-2.0 wording)
+- [x] Create `tpt-av-test-reference/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
+- [x] Create `tpt-av-test-fuzz/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
+- [x] Create `tpt-av-test-benchmark/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
+- [x] Create `tpt-av-test-mock/` crate skeleton (`Cargo.toml` + `src/lib.rs`)
+- [x] Create `tpt-av-test-vectors/` directory tree (`audio/{wav,flac,opus}`, `video/h264`, `images/reference`)
+- [x] Set up Git LFS tracking for `tpt-av-test-vectors/`
+- [x] GitHub Actions CI workflow (`.github/workflows/ci.yml`): `cargo test`, `cargo fuzz`, `cargo bench`, `cargo deny check`
+- [x] Initial commit
 
 ## Phase 1 — Foundation & Reference Harness
 

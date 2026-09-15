@@ -1,8 +1,20 @@
+# Rust build artifacts
 /target
-Cargo.lock
 **/*.rs.bk
 *.pdb
+
+# Generated lockfile (workspace boots from fresh resolution; CI uses cargo-deny)
+Cargo.lock
+
+# Editor / IDE
 .idea/
 .vscode/
 *.swp
+*.swo
 .DS_Store
+
+# Test / temporary output
+*.profraw
+*.gcda
+*.gcno
+coverage/

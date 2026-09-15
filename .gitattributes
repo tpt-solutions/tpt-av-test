@@ -1,0 +1,5 @@
+# Test vectors are static binaries managed by Git LFS
+tpt-av-test-vectors/** filter=lfs diff=lfs merge=lfs -text
+
+# Directory placeholders stay regular text
+tpt-av-test-vectors/**/.gitkeep !filter !diff !merge -text
