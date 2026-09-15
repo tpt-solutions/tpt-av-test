@@ -39,11 +39,11 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 
 ## Phase 2 — Fuzzing Infrastructure
 
-- [ ] `tpt-av-test-fuzz/src/parser.rs` — generic parser fuzzing macros (`fuzz_parser_never_panics!`)
-- [ ] `tpt-av-test-fuzz/src/crdt.rs` — CRDT commutativity/idempotency proptests (`assert_crdt_commutative`)
-- [ ] `tpt-av-test-fuzz/src/seed.rs` — deterministic seed management (reproducible failing seeds)
-- [ ] `tpt-av-test-fuzz/src/corpus/` — regression corpus of known-bad inputs, re-run every CI build
-- [ ] Example/integration tests demonstrating fuzz macros against a toy parser
+- [x] `tpt-av-test-fuzz/src/parser.rs` — generic parser fuzzing macros (`fuzz_parser_never_panics!`)
+- [x] `tpt-av-test-fuzz/src/crdt.rs` — CRDT commutativity/idempotency proptests (`assert_crdt_commutative`)
+- [x] `tpt-av-test-fuzz/src/seed.rs` — deterministic seed management (reproducible failing seeds)
+- [x] `tpt-av-test-fuzz/src/corpus/` — regression corpus of known-bad inputs, re-run every CI build
+- [x] Example/integration tests demonstrating fuzz macros against a toy parser
 
 ## Phase 3 — Real-Time Benchmarking
 
