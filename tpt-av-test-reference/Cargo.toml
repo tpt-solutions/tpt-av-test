@@ -10,3 +10,7 @@ categories = ["development-tools::testing", "multimedia::audio", "multimedia::vi
 keywords = ["testing", "conformance", "ffmpeg", "golden-master", "av"]
 
 [dependencies]
+image.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

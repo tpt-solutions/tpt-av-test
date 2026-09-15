@@ -24,18 +24,18 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 
 ## Phase 1 — Foundation & Reference Harness
 
-- [ ] `tpt-av-test-reference/src/ffmpeg.rs` — FFmpeg CLI subprocess wrapper (spawn, stream raw PCM stdout, never link)
-- [ ] `tpt-av-test-reference/src/audio.rs` — PCM bit-exact comparison w/ float epsilon (`assert_bit_exact_vs_ffmpeg`)
-- [ ] `tpt-av-test-reference/src/image.rs` — pixel comparison via PSNR/SSIM (`assert_image_similar`)
-- [ ] `tpt-av-test-reference/src/libsndfile.rs` — libsndfile/sox/ffprobe CLI wrapper
-- [ ] Source & commit official WAV test vectors
-- [ ] Source & commit official FLAC test suite
-- [ ] Source & commit official Opus test vectors
-- [ ] Source & commit ITU-T H.264 conformance streams
-- [ ] Source & commit reference images for compositor tests
-- [ ] Wire `cargo-deny` into CI, failing on GPL/LGPL/AGPL/MPL deps
-- [ ] Integration tests for `assert_bit_exact_vs_ffmpeg`
-- [ ] Integration tests for `assert_image_similar`
+- [x] `tpt-av-test-reference/src/ffmpeg.rs` — FFmpeg CLI subprocess wrapper (spawn, stream raw PCM stdout, never link)
+- [x] `tpt-av-test-reference/src/audio.rs` — PCM bit-exact comparison w/ float epsilon (`assert_bit_exact_vs_ffmpeg`)
+- [x] `tpt-av-test-reference/src/image.rs` — pixel comparison via PSNR/SSIM (`assert_image_similar`)
+- [x] `tpt-av-test-reference/src/libsndfile.rs` — libsndfile/sox/ffprobe CLI wrapper
+- [x] Source & commit official WAV test vectors
+- [x] Source & commit official FLAC test suite
+- [x] Source & commit official Opus test vectors
+- [x] Source & commit ITU-T H.264 conformance streams
+- [x] Source & commit reference images for compositor tests
+- [x] Wire `cargo-deny` into CI, failing on GPL/LGPL/AGPL/MPL deps
+- [x] Integration tests for `assert_bit_exact_vs_ffmpeg`
+- [x] Integration tests for `assert_image_similar`
 
 ## Phase 2 — Fuzzing Infrastructure
 
