@@ -156,6 +156,53 @@ pub fn assert_image_similar(
     Ok(())
 }
 
+/// Asserts that `generated` is *bit-exact* against the image at
+/// `reference_path`: identical dimensions and every RGB byte equal.
+///
+/// This is the gate `tpt-visual` uses for deterministic compositor frames —
+/// when the renderer promises a golden master, "very similar" is not good
+/// enough. For lossy GPU paths prefer [`assert_image_similar`].
+pub fn assert_frame_exact(generated: &DynamicImage, reference_path: &Path) -> ReferenceResult<()> {
+    let reference = match image::open(reference_path) {
+        Ok(loaded) => loaded,
+        Err(err) => return Err(ReferenceError::ImageDecode(err.to_string())),
+    };
+    image_dimensions_check(generated, &reference)?;
+
+    let generated_rgb = generated.to_rgb8();
+    let reference_rgb = reference.to_rgb8();
+    if generated_rgb.as_raw() != reference_rgb.as_raw() {
+        // Locate the first differing pixel for a precise report.
+        let differing = generated_rgb
+            .as_raw()
+            .iter()
+            .zip(reference_rgb.as_raw())
+            .position(|(a, b)| a != b)
+            .unwrap_or_default()
+            / 3;
+        let (x, y) = (
+            (differing % generated_rgb.width() as usize) as u32,
+            (differing / generated_rgb.width() as usize) as u32,
+        );
+        let index = differing * 3;
+        return Err(ReferenceError::FrameNotExact {
+            path: reference_path.to_path_buf(),
+            pixel: (x, y),
+            generated: [
+                generated_rgb.as_raw()[index],
+                generated_rgb.as_raw()[index + 1],
+                generated_rgb.as_raw()[index + 2],
+            ],
+            reference: [
+                reference_rgb.as_raw()[index],
+                reference_rgb.as_raw()[index + 1],
+                reference_rgb.as_raw()[index + 2],
+            ],
+        });
+    }
+    Ok(())
+}
+
 fn image_dimensions_check(
     generated: &DynamicImage,
     reference: &DynamicImage,
@@ -201,5 +248,60 @@ mod tests {
         let a = solid([0, 0, 0], 32, 32);
         let b = solid([255, 255, 255], 32, 32);
         assert!(ssim(&a, &b) < 0.05);
+    }
+
+    fn write_reference(
+        dir: &tempfile::TempDir,
+        name: &str,
+        image: &RgbImage,
+    ) -> std::path::PathBuf {
+        let path = dir.path().join(name);
+        image::DynamicImage::ImageRgb8(image.clone())
+            .save(&path)
+            .expect("save reference");
+        path
+    }
+
+    #[test]
+    fn frame_exact_passes_for_identical_frames() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = write_reference(&dir, "frame-exact-ok.png", &solid([12, 34, 56], 16, 16));
+        let generated = image::DynamicImage::ImageRgb8(solid([12, 34, 56], 16, 16));
+        assert!(assert_frame_exact(&generated, &path).is_ok());
+    }
+
+    #[test]
+    fn frame_exact_pinpoints_the_first_differing_pixel() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let mut reference = solid([0, 0, 0], 8, 8);
+        reference.put_pixel(3, 1, Rgb([255, 0, 0]));
+        let path = write_reference(&dir, "frame-exact-diff.png", &reference);
+
+        let generated = image::DynamicImage::ImageRgb8(solid([0, 0, 0], 8, 8));
+        let error = assert_frame_exact(&generated, &path).unwrap_err();
+        match error {
+            ReferenceError::FrameNotExact {
+                pixel,
+                generated,
+                reference,
+                ..
+            } => {
+                assert_eq!(pixel, (3, 1));
+                assert_eq!(generated, [0, 0, 0]);
+                assert_eq!(reference, [255, 0, 0]);
+            }
+            other => panic!("expected FrameNotExact, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn frame_exact_rejects_dimension_mismatches() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = write_reference(&dir, "frame-exact-size.png", &solid([1, 2, 3], 8, 8));
+        let generated = image::DynamicImage::ImageRgb8(solid([1, 2, 3], 16, 16));
+        assert!(matches!(
+            assert_frame_exact(&generated, &path),
+            Err(ReferenceError::ImageDimensionMismatch { .. })
+        ));
     }
 }

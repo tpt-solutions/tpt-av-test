@@ -62,9 +62,14 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 
 ## Phase 5 — Ecosystem Rollout
 
-- [ ] Publish/tag `v0.1.0`
-- [ ] Wire `tpt-cadence` to use `reference::assert_bit_exact_vs_ffmpeg` + `fuzz::fuzz_parser`
-- [ ] Wire `tpt-audio` to use `benchmark::assert_real_time_safe`
-- [ ] Wire `tpt-visual` to use `reference::assert_frame_exact`
-- [ ] Wire `tpt-av-sync` to use `fuzz::proptest_crdt_commutative`
-- [ ] Wire `tpt-av-control` to use `mock::MockMidiDevice`
+- [x] Publish/tag `v0.1.0` (git tag created; crates.io publish pending publish credentials)
+- [x] Wire `tpt-cadence` to use `reference::assert_bit_exact_vs_ffmpeg` + `fuzz::fuzz_parser` — `tpt-av-cadence-test-utils` delegates FFmpeg subprocess decode to `tpt-av-test-reference`; `tpt-av-cadence-wav` runs `fuzz_parser_never_panics!` (256 proptest cases) plus the shared regression corpus
+- [x] Wire `tpt-audio` to use `benchmark::assert_real_time_safe` — `tpt-av-audio-core/tests/real_time_harness.rs` gates `AudioGraph::process` (gain→pan→fade) at zero allocations per 512-frame callback; the package opts out of the default `tracking-allocator` feature and installs `TrackingAllocator` explicitly because `rt_safety.rs` declares its own allocator
+- [ ] Wire `tpt-visual` to use `reference::assert_frame_exact` — the API shipped in `tpt-av-test-reference` (bit-exact RGB comparison with first-diff reporting); the consumer wiring is deferred to the tpt-visual repo (wgpu/GPU toolchain, pinned git deps)
+- [x] Wire `tpt-av-sync` to use `fuzz::proptest_crdt_commutative` — `tpt-av-sync-crdt/tests/harness_convergence.rs` proves `LwwReg` commutativity, idempotency, and tie-breaking via `tpt-av-test-fuzz`
+- [x] Wire `tpt-av-control` to use `mock::MockMidiDevice` — `tpt-av-control-midi/tests/harness_mock_port.rs` drives `parse_midi1` through the virtual port (note round-trip, FIFO order, full gesture stream)
+
+> The four wired repositories received additive changes only (dev-dependency
+> entries + new test files / delegation). They are left uncommitted in each
+> repo for review alongside that repo's in-flight work; tpt-av-sync's tree is
+> otherwise fully untracked upstream.

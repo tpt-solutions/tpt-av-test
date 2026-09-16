@@ -77,6 +77,17 @@ pub enum ReferenceError {
     },
     /// The reference image could not be decoded.
     ImageDecode(String),
+    /// A frame claimed bit-exact differed from the reference.
+    FrameNotExact {
+        /// The reference image that was compared against.
+        path: std::path::PathBuf,
+        /// Coordinates of the first differing pixel.
+        pixel: (u32, u32),
+        /// RGB of the generated pixel.
+        generated: [u8; 3],
+        /// RGB of the reference pixel.
+        reference: [u8; 3],
+    },
 }
 
 impl std::fmt::Display for ReferenceError {
@@ -150,6 +161,21 @@ impl std::fmt::Display for ReferenceError {
             ReferenceError::ImageDecode(message) => {
                 write!(f, "failed to decode reference image: {message}")
             }
+            ReferenceError::FrameNotExact {
+                path,
+                pixel,
+                generated,
+                reference,
+            } => write!(
+                f,
+                "frame is not bit-exact against '{}' — first difference at pixel \
+                 ({}, {}): generated {:?}, reference {:?}",
+                path.display(),
+                pixel.0,
+                pixel.1,
+                generated,
+                reference
+            ),
         }
     }
 }

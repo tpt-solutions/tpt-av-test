@@ -9,6 +9,12 @@ description = "Real-time safety and performance benchmark harness for the TPT AV
 categories = ["development-tools::testing", "performance"]
 keywords = ["benchmark", "real-time", "allocation", "audio", "criterion"]
 
+[features]
+default = ["tracking-allocator"]
+# Installs TrackingAllocator as the process #[global_allocator]. Opt out
+# (default-features = false) when the test binary declares its own.
+tracking-allocator = []
+
 [dependencies]
 log.workspace = true
 tpt-av-test-macros.workspace = true

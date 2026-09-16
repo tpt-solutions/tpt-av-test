@@ -57,11 +57,15 @@ use std::marker::PhantomData;
 /// while an [`AllocationTracker`] scope is active, and otherwise forwards
 /// straight to [`std::alloc::System`].
 ///
-/// Installed by this crate as the process `#[global_allocator]`. Do not also
-/// declare a `#[global_allocator]` in a binary that links this crate — there
-/// can only be one.
+/// By default (the `tracking-allocator` feature) this crate installs it as
+/// the process `#[global_allocator]`, so simply depending on the crate makes
+/// every allocation observable. A binary that needs its *own* allocator can
+/// opt out with `default-features = false` and then declare
+/// `static GLOBAL: tpt_av_test_benchmark::TrackingAllocator = ...` itself —
+/// only one `#[global_allocator]` may exist per binary.
 pub struct TrackingAllocator;
 
+#[cfg(feature = "tracking-allocator")]
 #[global_allocator]
 static TRACKING_ALLOCATOR: TrackingAllocator = TrackingAllocator;
 

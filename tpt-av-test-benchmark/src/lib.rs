@@ -36,10 +36,12 @@
 //!
 //! # Global allocator
 //!
-//! This crate installs [`allocation_tracker::TrackingAllocator`] as the
-//! process `#[global_allocator]`, so simply depending on it (as a
-//! dev-dependency) makes every allocation observable. Do not declare another
-//! `#[global_allocator]` in binaries that link this crate.
+//! By default this crate installs [`allocation_tracker::TrackingAllocator`]
+//! as the process `#[global_allocator]` (`tracking-allocator` feature), so
+//! simply depending on it (as a dev-dependency) makes every allocation
+//! observable. Binaries that need their own allocator build the crate with
+//! `default-features = false` and declare `TrackingAllocator` themselves —
+//! there can only be one `#[global_allocator]` per binary.
 
 pub mod allocation_tracker;
 pub mod audio_block;
