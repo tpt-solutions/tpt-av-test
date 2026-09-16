@@ -31,8 +31,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      # Compiles and runs real-time safety benches. Phase 3 wires the
-      # allocation gate that fails on any detected heap allocation.
+      # Real-time safety gate: tpt-av-test-benchmark/benches/real_time.rs
+      # fails this job if any heap allocation is detected inside a simulated
+      # audio callback (512/1024 frames).
       - run: cargo bench --workspace
 
   deny:

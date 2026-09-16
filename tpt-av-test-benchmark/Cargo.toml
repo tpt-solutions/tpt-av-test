@@ -11,3 +11,8 @@ keywords = ["benchmark", "real-time", "allocation", "audio", "criterion"]
 
 [dependencies]
 log.workspace = true
+tpt-av-test-macros.workspace = true
+
+[[bench]]
+name = "real_time"
+harness = false

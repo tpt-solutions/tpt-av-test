@@ -4,6 +4,7 @@ members = [
     "tpt-av-test-reference",
     "tpt-av-test-fuzz",
     "tpt-av-test-benchmark",
+    "tpt-av-test-macros",
     "tpt-av-test-mock",
 ]
 
@@ -18,6 +19,7 @@ rust-version = "1.75"
 tpt-av-test-reference = { path = "tpt-av-test-reference", version = "0.1.0" }
 tpt-av-test-fuzz = { path = "tpt-av-test-fuzz", version = "0.1.0" }
 tpt-av-test-benchmark = { path = "tpt-av-test-benchmark", version = "0.1.0" }
+tpt-av-test-macros = { path = "tpt-av-test-macros", version = "0.1.0" }
 tpt-av-test-mock = { path = "tpt-av-test-mock", version = "0.1.0" }
 proptest = "1.4"
 criterion = "0.5"
