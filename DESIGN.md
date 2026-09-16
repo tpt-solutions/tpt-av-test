@@ -80,9 +80,15 @@ tpt-av-test/                        # GitHub Repository / Workspace Root
 │   │   ├── allocation_tracker.rs   # Custom allocator detecting heap allocations
 │   │   ├── timing.rs               # Microsecond-precision execution timing
 │   │   ├── audio_block.rs          # Simulated audio callback benchmarking
-│   │   └── macros.rs               # `#[bench_real_time]` procedural macro
+│   │   └── macros.rs               # `assert_real_time_safe!` + re-export of `#[bench_real_time]`
 │   ├── Cargo.toml
+│   ├── benches/
 │   └── tests/
+│
+├── tpt-av-test-macros/             # Procedural macros (`#[bench_real_time]`)
+│   ├── src/
+│   │   └── lib.rs
+│   └── Cargo.toml
 │
 ├── tpt-av-test-mock/               # Mock hardware and network for CI
 │   ├── src/
@@ -279,11 +285,11 @@ All synthetic audio and image generation is deterministic and reproducible; no R
 
 | Phase | Scope | Status |
 | :--- | :--- | :--- |
-| 0 | Repository & workspace scaffolding | In progress |
-| 1 | Foundation & reference harness (`reference` crate, Git LFS vectors, cargo-deny CI) | Planned |
-| 2 | Fuzzing infrastructure (`fuzz` proptest macros, regression corpus, CRDT harness) | Planned |
-| 3 | Real-time benchmarking (`benchmark` AllocationTracker, `#[bench_real_time]`, audio blocks) | Planned |
-| 4 | Mock hardware (`mock` MIDI, audio device, network, filesystem) | Planned |
+| 0 | Repository & workspace scaffolding | Complete |
+| 1 | Foundation & reference harness (`reference` crate, Git LFS vectors, cargo-deny CI) | Complete |
+| 2 | Fuzzing infrastructure (`fuzz` proptest macros, regression corpus, CRDT harness) | Complete |
+| 3 | Real-time benchmarking (`benchmark` AllocationTracker, `#[bench_real_time]`, audio blocks) | Complete |
+| 4 | Mock hardware (`mock` MIDI, audio device, network, filesystem) | Complete |
 | 5 | Ecosystem rollout (publish `v0.1.0`, wire `tpt-*` consumers) | Planned |
 
 ---

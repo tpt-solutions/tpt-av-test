@@ -47,18 +47,18 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 
 ## Phase 3 — Real-Time Benchmarking
 
-- [ ] `tpt-av-test-benchmark/src/allocation_tracker.rs` — custom global allocator tracking heap allocations
-- [ ] `tpt-av-test-benchmark/src/timing.rs` — microsecond-precision execution timing
-- [ ] `tpt-av-test-benchmark/src/audio_block.rs` — simulated audio callback benchmarking (512/1024 samples)
-- [ ] `tpt-av-test-benchmark/src/macros.rs` — `#[bench_real_time]` proc macro + `assert_real_time_safe!` macro
-- [ ] Wire `cargo bench` CI gate to fail on any detected allocation
+- [x] `tpt-av-test-benchmark/src/allocation_tracker.rs` — custom global allocator tracking heap allocations
+- [x] `tpt-av-test-benchmark/src/timing.rs` — microsecond-precision execution timing
+- [x] `tpt-av-test-benchmark/src/audio_block.rs` — simulated audio callback benchmarking (512/1024 samples)
+- [x] `tpt-av-test-benchmark/src/macros.rs` — `#[bench_real_time]` proc macro + `assert_real_time_safe!` macro
+- [x] Wire `cargo bench` CI gate to fail on any detected allocation
 
 ## Phase 4 — Mock Hardware
 
-- [ ] `tpt-av-test-mock/src/midi_port.rs` — `MockMidiDevice` (virtual MIDI in/out, `inject`/`try_recv`)
-- [ ] `tpt-av-test-mock/src/audio_device.rs` — `MockAudioDevice` (sine wave generator, accepts buffers)
-- [ ] `tpt-av-test-mock/src/network.rs` — `MockNetworkTransport` (mock WebRTC/WebSocket transport)
-- [ ] `tpt-av-test-mock/src/filesystem.rs` — in-memory virtual filesystem
+- [x] `tpt-av-test-mock/src/midi_port.rs` — `MockMidiDevice` (virtual MIDI in/out, `inject`/`try_recv`)
+- [x] `tpt-av-test-mock/src/audio_device.rs` — `MockAudioDevice` (sine wave generator, accepts buffers)
+- [x] `tpt-av-test-mock/src/network.rs` — `MockNetworkTransport` (mock WebRTC/WebSocket transport)
+- [x] `tpt-av-test-mock/src/filesystem.rs` — in-memory virtual filesystem
 
 ## Phase 5 — Ecosystem Rollout
 

@@ -18,7 +18,8 @@
 | :--- | :--- |
 | `tpt-av-test-reference` | Golden-master harness: compares pure-Rust decoder/compositor output against FFmpeg & libsndfile via subprocess. |
 | `tpt-av-test-fuzz` | Property-based fuzzing macros (parser never panics, CRDT commutativity/idempotency) with deterministic seeds. |
-| `tpt-av-test-benchmark` | Real-time safety: custom global allocator that flags heap allocations inside audio callbacks. |
+| `tpt-av-test-benchmark` | Real-time safety: custom global allocator that flags heap allocations inside audio callbacks, µs-precision timing, and the `assert_real_time_safe!` / `#[bench_real_time]` gates. |
+| `tpt-av-test-macros` | Procedural macros backing the benchmark harness (`#[bench_real_time]`). |
 | `tpt-av-test-mock` | Virtual MIDI ports, audio devices, network transports, and in-memory filesystems for CI. |
 | `tpt-av-test-vectors` | Static, Git-LFS-managed official test files (WAV, FLAC, Opus, H.264, reference images). |
 
