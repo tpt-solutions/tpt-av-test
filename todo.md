@@ -73,3 +73,22 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 > entries + new test files / delegation). They are left uncommitted in each
 > repo for review alongside that repo's in-flight work; tpt-av-sync's tree is
 > otherwise fully untracked upstream.
+
+## Phase 6 — Gap Fixes, Security Hardening, Adoption Tooling
+
+- [x] Real `cargo-fuzz` target: `tpt-av-test-fuzz/fuzz/` sub-crate with `fuzz_targets/pcm_bytes_to_f32.rs` wrapping `tpt_av_test_reference::ffmpeg::pcm_bytes_to_f32`
+- [x] Seed the new fuzz target's corpus from relevant existing `tpt-av-test-fuzz/corpus/*.bin` files
+- [x] Fix `.github/workflows/ci.yml` `fuzz` job to actually run `cargo fuzz run pcm_bytes_to_f32` instead of the `if [ -d ... ]` no-op placeholder
+- [x] Reconcile README/todo.md wording with the now-real fuzz job
+- [x] Add `[advisories]` section to `deny.toml` (`vulnerability = "deny"`, `unmaintained = "warn"`)
+- [x] Add a `cargo-audit` CI job as defense-in-depth alongside `cargo deny`
+- [x] Pin third-party GitHub Actions (`actions/checkout`, `dtolnay/rust-toolchain`, `Swatinem/rust-cache`, `EmbarkStudios/cargo-deny-action`) to commit SHAs with version comments
+- [x] Add a `lint` CI job: `cargo fmt --all -- --check` + `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- [x] Add `rustfmt.toml` and `clippy.toml` (minimal, workspace defaults)
+- [x] README: add CI/license badges + a Quickstart section with a copy-pasteable dev-dependency snippet and minimal usage example
+- [x] Add `CONTRIBUTING.md` (short, issue-first: open an issue before a PR, list required local checks — fmt/clippy/test/deny)
+- [x] Add `CHANGELOG.md` seeded with a `0.1.0` entry summarizing Phases 0-5
+- [x] Add `templates/consumer-crate/` cargo-generate template wiring the five harness crates as dev-deps for new downstream repos
+- [x] Document the `cargo generate --git <repo> templates/consumer-crate` flow in README
+- [x] Add a `pages` CI job (push-to-`master`) publishing `target/criterion` benchmark HTML reports to GitHub Pages
+- [x] Link the published benchmark dashboard URL from README

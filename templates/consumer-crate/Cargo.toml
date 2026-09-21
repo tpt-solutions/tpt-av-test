@@ -1,0 +1,12 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+edition = "2021"
+description = "{{description}}"
+license = "MIT OR Apache-2.0"
+
+[dev-dependencies]
+tpt-av-test-reference = { git = "https://github.com/tpt-solutions/tpt-av-test" }
+tpt-av-test-fuzz = { git = "https://github.com/tpt-solutions/tpt-av-test" }
+tpt-av-test-benchmark = { git = "https://github.com/tpt-solutions/tpt-av-test" }
+tpt-av-test-mock = { git = "https://github.com/tpt-solutions/tpt-av-test" }

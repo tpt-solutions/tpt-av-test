@@ -18,19 +18,31 @@ jobs:
     name: cargo test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: Swatinem/rust-cache@aa7c1c80a07a27a84c0aa76d0cef0aad3830e330 # v2.7.8
       - run: cargo build --workspace --all-targets
       - run: cargo test --workspace --all-targets
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@aa7c1c80a07a27a84c0aa76d0cef0aad3830e330 # v2.7.8
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   bench:
     name: cargo bench
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: Swatinem/rust-cache@aa7c1c80a07a27a84c0aa76d0cef0aad3830e330 # v2.7.8
       # Real-time safety gate: tpt-av-test-benchmark/benches/real_time.rs
       # fails this job if any heap allocation is detected inside a simulated
       # audio callback (512/1024 frames).
@@ -40,27 +52,62 @@ jobs:
     name: cargo deny check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: EmbarkStudios/cargo-deny-action@9b7d65878c2d28c8e3c16e30bf555c29abe505bd # v2.0.11
         with:
           command: check
           arguments: --all-features
+
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      # Defense-in-depth alongside `cargo deny check` (which also enforces
+      # the [advisories] section in deny.toml): this queries the live
+      # RustSec advisory database directly on every run.
+      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   fuzz:
     name: cargo fuzz
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@be39649afda95dbf70f87cce95f68b8d5797b296 # nightly
+      - uses: Swatinem/rust-cache@aa7c1c80a07a27a84c0aa76d0cef0aad3830e330 # v2.7.8
       - run: cargo install cargo-fuzz --locked
-      # Phase 2 introduces the first fuzz targets (tpt-av-test-fuzz/fuzz/).
-      # Until then, build only what exists so this gate stays green.
-      - name: cargo fuzz build
-        shell: bash
+      # 60 seconds of libFuzzer against pcm_bytes_to_f32, seeded from
+      # tpt-av-test-fuzz/fuzz/corpus/pcm_bytes_to_f32/. A crash or hang
+      # fails the job; libFuzzer also writes any new crashing input to
+      # tpt-av-test-fuzz/fuzz/artifacts/pcm_bytes_to_f32/.
+      - name: cargo fuzz run pcm_bytes_to_f32
         run: |
-          if [ -d tpt-av-test-fuzz/fuzz ]; then
-            cargo fuzz build --fuzz-dir tpt-av-test-fuzz/fuzz
-          else
-            echo "No fuzz targets yet; nothing to build."
-          fi
+          cargo fuzz run --fuzz-dir tpt-av-test-fuzz/fuzz pcm_bytes_to_f32 -- -max_total_time=60
+
+  pages:
+    name: publish benchmark dashboard
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [test, bench]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: Swatinem/rust-cache@aa7c1c80a07a27a84c0aa76d0cef0aad3830e330 # v2.7.8
+      # Criterion HTML reports (target/criterion/); benches/real_time.rs is
+      # a pass/fail gate with no report output, so only throughput.rs feeds
+      # the dashboard.
+      - run: cargo bench --package tpt-av-test-benchmark --bench throughput
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: target/criterion
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

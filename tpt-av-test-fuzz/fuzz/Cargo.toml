@@ -1,0 +1,21 @@
+[package]
+name = "tpt-av-test-fuzz-targets"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.tpt-av-test-reference]
+path = "../../tpt-av-test-reference"
+
+[[bin]]
+name = "pcm_bytes_to_f32"
+path = "fuzz_targets/pcm_bytes_to_f32.rs"
+test = false
+doc = false
+bench = false

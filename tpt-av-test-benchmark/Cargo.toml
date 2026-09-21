@@ -19,6 +19,13 @@ tracking-allocator = []
 log.workspace = true
 tpt-av-test-macros.workspace = true
 
+[dev-dependencies]
+criterion = { workspace = true, features = ["html_reports"] }
+
 [[bench]]
 name = "real_time"
+harness = false
+
+[[bench]]
+name = "throughput"
 harness = false
