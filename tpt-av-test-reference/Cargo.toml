@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+readme = "README.md"
 description = "Golden-master comparison harness for the TPT AV Stack: bit-exact audio and image conformance against FFmpeg/libsndfile via subprocess."
 categories = ["development-tools::testing", "multimedia::audio", "multimedia::video"]
 keywords = ["testing", "conformance", "ffmpeg", "golden-master", "av"]

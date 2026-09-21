@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+readme = "README.md"
 description = "Mock hardware and network infrastructure for the TPT AV Stack: virtual MIDI ports, audio devices, transports, and in-memory filesystems for CI."
 categories = ["development-tools::testing", "multimedia::audio", "multimedia::video"]
 keywords = ["mock", "testing", "midi", "audio", "virtual"]
