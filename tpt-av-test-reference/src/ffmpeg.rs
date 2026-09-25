@@ -14,18 +14,25 @@ use crate::{ReferenceError, ReferenceResult};
 pub const FFMPEG_BIN: &str = "ffmpeg";
 
 /// Decodes `input` to interleaved, little-endian IEEE-754 `f32` samples at
-/// the requested sample rate and channel count.
+/// the decoder's native channel layout, resampled to `sample_rate`.
 ///
 /// Implemented as
 /// `ffmpeg -v error -hide_banner -nostdin -i <input> -f f32le
-/// -acodec pcm_f32le -ar <sr> -ac <ch> -`.
+/// -acodec pcm_f32le -ar <sr> -`.
+///
+/// No `-ac <ch>` is passed: `-ac` converts to the DEFAULT layout for that
+/// channel count, which silently FOLDS non-default layouts (e.g. a
+/// 7.1(wide) PCE decode gets its front-of-center pair mixed into FL/FR and
+/// its last pair zeroed, corrupting the reference for exactly the
+/// multichannel conformance streams the suite compares against). Callers
+/// that need a specific count must ensure the decoder emits that count
+/// natively and verify via output length.
 ///
 /// Returns an error if `ffmpeg` is missing, fails, or emits output that is
 /// not a whole number of `f32` frames.
-pub fn decode_to_f32le(input: &Path, sample_rate: u32, channels: u16) -> ReferenceResult<Vec<f32>> {
+pub fn decode_to_f32le(input: &Path, sample_rate: u32, _channels: u16) -> ReferenceResult<Vec<f32>> {
     let sample_rate_arg = sample_rate.to_string();
-    let channels_arg = channels.to_string();
-    let args: [&OsStr; 15] = [
+    let args: [&OsStr; 13] = [
         OsStr::new("-v"),
         OsStr::new("error"),
         OsStr::new("-hide_banner"),
@@ -38,8 +45,6 @@ pub fn decode_to_f32le(input: &Path, sample_rate: u32, channels: u16) -> Referen
         OsStr::new("pcm_f32le"),
         OsStr::new("-ar"),
         OsStr::new(&sample_rate_arg),
-        OsStr::new("-ac"),
-        OsStr::new(&channels_arg),
         OsStr::new("-"),
     ];
 
