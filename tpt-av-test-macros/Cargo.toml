@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+readme = "README.md"
 description = "Procedural macros backing the tpt-av-test benchmark harness."
 categories = ["development-tools::testing", "performance"]
 keywords = ["benchmark", "real-time", "proc-macro"]

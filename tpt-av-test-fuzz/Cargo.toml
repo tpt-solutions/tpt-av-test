@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+readme = "README.md"
 description = "Deterministic property-based fuzzing harness for the TPT AV Stack: parser never-panic macros and CRDT commutativity/idempotency proptests."
 categories = ["development-tools::testing"]
 keywords = ["fuzzing", "proptest", "property-testing", "crdt", "seed"]

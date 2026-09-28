@@ -7,6 +7,12 @@
 # `allow`; the allow list below is therefore the complete license
 # whitelist for the entire dependency graph.
 
+[advisories]
+# RUSTSEC vulnerability advisories fail the build; unmaintained crates only
+# warn, since a transitive dep can go unmaintained without an available fix.
+vulnerability = "deny"
+unmaintained = "warn"
+
 [licenses]
 # Everything not in this list is denied by default, including all
 # GPL/LGPL/AGPL/MPL licenses.
