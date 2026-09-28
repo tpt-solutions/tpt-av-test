@@ -30,7 +30,11 @@ pub const FFMPEG_BIN: &str = "ffmpeg";
 ///
 /// Returns an error if `ffmpeg` is missing, fails, or emits output that is
 /// not a whole number of `f32` frames.
-pub fn decode_to_f32le(input: &Path, sample_rate: u32, _channels: u16) -> ReferenceResult<Vec<f32>> {
+pub fn decode_to_f32le(
+    input: &Path,
+    sample_rate: u32,
+    _channels: u16,
+) -> ReferenceResult<Vec<f32>> {
     let sample_rate_arg = sample_rate.to_string();
     let args: [&OsStr; 13] = [
         OsStr::new("-v"),

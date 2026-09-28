@@ -25,4 +25,7 @@ proptest = "1.4"
 criterion = "0.5"
 tempfile = "3.10"
 log = "0.4"
-image = { version = "0.25", default-features = false, features = ["png"] }
+# Pinned below 0.25.8: starting there, image pulls in moxcms -> pxfm, whose
+# rust-version is 1.85 regardless of the pxfm release picked, which breaks
+# the 1.75 MSRV this workspace targets. Bump only once the MSRV moves too.
+image = { version = ">=0.25, <0.25.8", default-features = false, features = ["png"] }
