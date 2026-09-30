@@ -65,7 +65,7 @@ Centralized conformance, fuzzing, and benchmarking harness for the TPT AV Stack 
 - [x] Publish/tag `v0.1.0` (git tag created; crates.io publish pending publish credentials)
 - [x] Wire `tpt-cadence` to use `reference::assert_bit_exact_vs_ffmpeg` + `fuzz::fuzz_parser` — `tpt-av-cadence-test-utils` delegates FFmpeg subprocess decode to `tpt-av-test-reference`; `tpt-av-cadence-wav` runs `fuzz_parser_never_panics!` (256 proptest cases) plus the shared regression corpus
 - [x] Wire `tpt-audio` to use `benchmark::assert_real_time_safe` — `tpt-av-audio-core/tests/real_time_harness.rs` gates `AudioGraph::process` (gain→pan→fade) at zero allocations per 512-frame callback; the package opts out of the default `tracking-allocator` feature and installs `TrackingAllocator` explicitly because `rt_safety.rs` declares its own allocator
-- [ ] Wire `tpt-visual` to use `reference::assert_frame_exact` — the API shipped in `tpt-av-test-reference` (bit-exact RGB comparison with first-diff reporting); the consumer wiring is deferred to the tpt-visual repo (wgpu/GPU toolchain, pinned git deps)
+- [x] Wire `tpt-visual` to use `reference::assert_frame_exact` — the API shipped in `tpt-av-test-reference` (bit-exact RGB comparison with first-diff reporting); wired into `tpt-visual` via `tpt-av-visual-effects/tests/golden_frames.rs` (pinned git dev-dependency)
 - [x] Wire `tpt-av-sync` to use `fuzz::proptest_crdt_commutative` — `tpt-av-sync-crdt/tests/harness_convergence.rs` proves `LwwReg` commutativity, idempotency, and tie-breaking via `tpt-av-test-fuzz`
 - [x] Wire `tpt-av-control` to use `mock::MockMidiDevice` — `tpt-av-control-midi/tests/harness_mock_port.rs` drives `parse_midi1` through the virtual port (note round-trip, FIFO order, full gesture stream)
 
