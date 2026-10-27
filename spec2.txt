@@ -1,0 +1,100 @@
+Design Update: Adversarial Assurance Harness
+Repository: tpt-av-test
+Priority: P1 — Create a common harness before creating another test engine
+Status: Draft / Pending Implementation
+1. Context & Objective
+Formal verification (tpt-eidos, tpt-solver) and runtime enforcement (tpt-norma, tpt-writ) are only as strong as the tests that challenge their boundaries. A common-mode defect in the verifier or a subtle state-drift bug in the workflow engine can bypass static checks.
+This update introduces tpt-assurance-harness, a new crate within the tpt-av-test workspace. It provides a unified, domain-agnostic framework for property-based testing, state-space exploration, and deterministic replay. Its goal is to systematically challenge the entire Proposer-Verifier-Executor pipeline, ensuring that edge cases, concurrency bugs, and verifier timeouts are caught before deployment.
+2. Workspace & Crate Layout
+Add the following crate to the existing tpt-av-test Cargo workspace, leveraging its existing fuzz and mock infrastructure.
+Crate
+Responsibility
+tpt-assurance-harness
+The core adversarial testing framework, integrating scenario generation, state exploration, and independent oracles.
+(Future modules within this crate, organized as Rust modules rather than separate crates to minimize overhead):
+scenario: Declarative scenarios with preconditions, actions, and expected properties.
+generator: Boundary values, invalid states, mutation strategies, and property-based inputs (integrates with tpt-av-test-fuzz).
+state_explorer: Transition exploration for bounded FSMs and selected Petri-net models (integrates with tpt-workflow).
+oracle: Independent safety properties and expected invariants (does not rely on the verifier being tested).
+trace: Deterministic replay and counterexample minimization (integrates with tpt-concord and tpt-repro).
+differential: Compare multiple policy evaluators or implementations to detect divergence.
+report: Machine-readable findings and references to tpt-concord evidence objects.
+3. Core Interface Additions
+The following Rust API shapes define the boundary. The harness must be able to drive the system under test (SUT) and independently verify the outcome.
+
+/// A declarative test scenario defining preconditions, actions, and expected properties.
+pub struct Scenario {
+    pub name: String,
+    pub initial_state: StateSnapshot,
+    pub actions: Vec<ActionRequest>,
+    pub expected_properties: Vec<Property>,
+}
+
+pub trait AssuranceOracle {
+    /// Independently evaluates whether a sequence of actions and states is safe.
+    /// MUST NOT rely on the same verification logic as the system under test (SUT).
+    fn evaluate_trace(
+        &self,
+        trace: &ExecutionTrace, // From tpt-concord / tpt-repro
+    ) -> Result<(), OracleViolation>;
+}
+
+pub trait StateExplorer {
+    /// Explores the state space of a bounded FSM up to a given depth.
+    /// Returns counterexamples if an invariant is violated.
+    fn explore(
+        &self,
+        initial_state: StateSnapshot,
+        max_depth: usize,
+        invariants: &[Invariant],
+    ) -> Vec<CounterExample>;
+}
+
+4. Strict Invariants & Safety Guarantees
+The harness itself must be rigorously designed to avoid false positives and ensure reproducibility:
+Independent Oracle: The AssuranceOracle must determine whether an action is unsafe without merely asking the same verifier (tpt-norma/tpt-solver) that it is testing. Otherwise, a common-mode verifier defect will escape detection.
+Deterministic Replay: Every discovered failure must produce a reproducible test case, including the exact seed, policy version, and a minimized counterexample trace.
+No Silent Swallows: The harness must explicitly test for and fail on: verifier timeouts, Indeterminate results treated as Allow, and missing audit records in tpt-concord.
+Isolation: Tests must run in isolated environments (leveraging tpt-av-test-mock) to prevent side effects from polluting other tests or the host system.
+5. Acceptance Tests (Definition of Done)
+The harness must be able to detect the following specific failure classes. The CI pipeline must include tests that intentionally trigger these failures to prove the harness catches them:
+Test Class
+Example Failure to Detect
+Harness Verification
+Invalid Proposal
+AI proposes an action outside its schema.
+Fuzzer generates malformed ActionRequest; harness expects tpt-norma to return Deny or Indeterminate.
+Constraint Bypass
+Action bypasses the policy engine.
+Mock direct tool call; harness expects tpt-writ to reject with CapabilityError.
+Stale State (TOCTOU)
+Previously valid action executed after state changes.
+Harness mutates state between tpt-norma evaluation and tpt-writ execution; expects rejection.
+Replay Attack
+Valid approval reused for a second payment/action.
+Harness submits the same ExecutionPermit twice; expects the second to fail.
+Concurrency
+Two individually valid actions jointly violate a resource limit.
+state_explorer runs concurrent transitions; oracle checks global invariant (e.g., total balance).
+Verifier Failure
+Timeout or Inconclusive becomes approval.
+Harness injects a forced timeout into tpt-solver; expects tpt-norma to return Indeterminate, not Allow.
+Audit Gap
+Execution occurs without a corresponding decision record.
+oracle scans tpt-concord post-test; flags any ExecutionRef without a matching decision_id.
+Recovery
+Restart or retry repeats a non-idempotent action.
+Harness simulates crash after tpt-writ permit issuance but before execution; restarts and expects exactly-once execution.
+6. Integration with Formal Assurance
+The harness must respect the hierarchy of assurance. It should not be presented as a "proof of general safety," but rather as the final line of defense:
+Prove/Statically Verify: Properties proved by tpt-eidos/tpt-telos.
+Certificate Check: Independently checked by tpt-solver at runtime.
+Exhaustive Exploration: Bounded state spaces explored by tpt-assurance-harness::state_explorer.
+Property-Based Testing: Fuzzing and differential testing via tpt-assurance-harness::generator.
+Regression: All discovered failures are automatically converted into deterministic regression tests.
+7. Dependencies & Contracts
+Requires: tpt-av-test-fuzz (for property-based input generation).
+Requires: tpt-av-test-mock (for isolated, side-effect-free execution environments).
+Requires: tpt-uir (for ActionRequest and StateSnapshot generation).
+Requires: tpt-concord & tpt-repro (to read execution traces and verify audit completeness).
+Provides to: All application repositories (tpt-healthcare-nz, tpt-flight-control, tpt-swarm) a standardized way to write adversarial tests against their specific workflows and policies.
